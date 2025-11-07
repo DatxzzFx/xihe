@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Weibo Downloader using Vercel Serverless Functions",
+  "type": "module", 
   "dependencies": {
     "axios": "^1.6.0"
   },
