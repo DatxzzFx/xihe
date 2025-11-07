@@ -1,49 +1,57 @@
 // File: /api/download.js
-// Ini adalah Vercel Serverless Function
+// Vercel Serverless Function - Menggunakan ESM (import/export)
 
-const axios = require('axios');
+import axios from 'axios'; 
 
-// Ini adalah handler default yang akan dieksekusi Vercel
+// 🚨 PERINGATAN KEAMANAN KRITIS: Kunci API di bawah ini akan terlihat publik.
+// Kami menempatkannya di sini sesuai permintaan Anda untuk debugging/pengujian cepat.
+const RAPIDAPI_KEY = '1dda0d29d3mshc5f2aacec619c44p16f219jsn99a62a516f98';
+
 export default async function handler(req, res) {
     
-    // 1. Hanya izinkan metode POST
+    // Hanya izinkan metode POST
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
-
-    // 2. Ambil URL dari body request
+    
     const { url } = req.body;
 
     if (!url || !url.includes('http')) {
-        return res.status(400).json({ message: 'Url is required and must be valid' });
+        return res.status(400).json({ message: 'URL is required and must be valid.' });
     }
 
-    // 3. Jalankan logika scraping Anda
     try {
-        const { data } = await axios.post('https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink', {
+        const rapidApiUrl = 'https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink';
+
+        const response = await axios.post(rapidApiUrl, {
             url: url
         }, {
             headers: {
+                // Header yang Anda sediakan
                 'accept-encoding': 'gzip',
                 'cache-control': 'no-cache',
                 'content-type': 'application/json; charset=utf-8',
-                'referer': 'https://auto-download-all-in-one.p.rapidapi.com/',
+                'referer': 'https://auto-download-all-in-one.p.rapidapi.com/', // Diperbaiki: Menggunakan string untuk key
                 'user-agent': 'Xihe/5.0',
                 'x-rapidapi-host': 'auto-download-all-in-one.p.rapidapi.com',
-                
-                // PENTING: Gunakan Environment Variable Vercel
-                'x-rapidapi-key': process.env.RAPIDAPI_KEY 
+                'x-rapidapi-key': RAPIDAPI_KEY // Kunci API yang terekspos
             }
         });
         
-        // 4. Kirim kembali hasil sukses ke frontend
-        return res.status(200).json(data);
+        // Mengembalikan data sukses
+        return res.status(200).json(response.data);
 
     } catch (error) {
-        // 5. Tangani error
-        console.error(error.response ? error.response.data : error.message);
-        const errorMessage = error.response?.data?.message || error.message || 'Internal Server Error';
-        return res.status(500).json({ message: errorMessage });
+        // Log detail error
+        const responseError = error.response ? error.response.data : {};
+        console.error('API Call Failed:', error.message);
+        
+        // Mengembalikan error yang ramah
+        const userMessage = responseError.message || 
+                            'Gagal memproses link. Pastikan URL Weibo valid dan coba lagi.';
+        
+        return res.status(500).json({ 
+            message: userMessage 
+        });
     }
-                                    }
-          
+}
