@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weibo Video Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: #111827;
+            color: #d1d5db;
+            scroll-behavior: smooth;
+        }
+        input, button {
+            transition: all 0.3s ease;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Sidebar V2 Styles */
+        .sidebar-container {
+            position: sticky;
+            top: 1rem;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        .sidebar-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-container::-webkit-scrollbar-track {
+            background: #1f2937;
+            border-radius: 10px;
+        }
+        .sidebar-container::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+        .sidebar-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #374151;
+            padding-bottom: 1rem;
+        }
+        .sidebar-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-tab:hover {
+            background-color: #374151;
+            color: #d1d5db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .sidebar-tab.active {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        .sidebar-panel {
+            background: linear-gradient(145deg, #1f2937, #111827);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.3);
+            border: 1px solid #374151;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            height: 0;
+            overflow: hidden;
+        }
+        .sidebar-panel.active {
+            opacity: 1;
+            transform: translateY(0);
+            height: auto;
+            margin-bottom: 1rem;
+        }
+        
+        /* Text Effects */
+        .text-glow {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        /* Scroll Effects */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto lg:flex lg:space-x-8">
+        
+        <main class="flex-grow bg-gray-800 p-6 rounded-lg shadow-xl">
+            <header class="text-center mb-8 scroll-reveal">
+                <h1 class="text-4xl font-bold text-white mb-2 text-glow">🚀 Weibo Video Downloader</h1>
+                <p class="text-lg text-blue-400">Unduh video Weibo favorit Anda dengan mudah dan cepat.</p>
+            </header>
+
+            <section class="mb-8 scroll-reveal">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input 
+                        type="url" 
+                        id="url-input" 
+                        placeholder="https://m.weibo.cn/detail/..." 
+                        class="flex-grow p-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                    <button 
+                        id="download-button" 
+                        class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition-all hover:scale-105"
+                    >
+                        <i class="bi bi-download mr-2"></i>Download
+                    </button>
+                </div>
+            </section>
+
+            <section id="results-section" class="min-h-[150px] bg-gray-700 rounded-lg p-4 scroll-reveal">
+                <div id="loader" class="hidden justify-center items-center h-full">
+                    <div class="loader"></div>
+                    <p class="ml-4 text-lg">Memproses link Anda...</p>
+                </div>
+                <div id="error-message" class="hidden text-red-400 text-center p-4"></div>
+                <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+            </section>
+
+            <section class="mt-8 scroll-reveal">
+                <h2 class="text-2xl font-bold text-white mb-4">Cara Penggunaan</h2>
+                <ol class="list-decimal list-inside space-y-2 text-gray-300 bg-gray-700 p-4 rounded-lg">
+                    <li class="fade-in">Buka aplikasi Weibo dan cari video yang ingin Anda unduh.</li>
+                    <li class="fade-in">Klik tombol "Share" (Bagikan) pada video tersebut.</li>
+                    <li class="fade-in">Pilih "Copy Link" (Salin Tautan) untuk menyalin URL video.</li>
+                    <li class="fade-in">Tempelkan (paste) URL di kotak input di atas.</li>
+                    <li class="fade-in">Klik tombol "Download". Tautan unduhan akan muncul di bawah.</li>
+                </ol>
+            </section>
+
+            <section class="mt-8 scroll-reveal">
+                <h2 class="text-2xl font-bold text-white mb-4">FAQ (Tanya Jawab)</h2>
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-4 rounded-lg fade-in">
+                        <h3 class="font-bold text-lg text-white">Apakah ini gratis?</h3>
+                        <p class="text-gray-300">Ya, layanan ini 100% gratis untuk digunakan.</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg fade-in">
+                        <h3 class="font-bold text-lg text-white">Di mana video disimpan setelah diunduh?</h3>
+                        <p class="text-gray-300">Video akan disimpan di folder "Downloads" atau "Unduhan" standar di perangkat Anda (browser di HP atau komputer).</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg fade-in">
+                        <h3 class="font-bold text-lg text-white">Mengapa video saya tidak terunduh?</h3>
+                        <p class="text-gray-300">Pastikan URL yang Anda masukkan benar dan berasal dari Weibo. Video yang bersifat privat atau dilindungi mungkin tidak dapat diunduh.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <aside class="w-full lg:w-1/4 mt-8 lg:mt-0">
+            <div class="sidebar-container">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" data-tab="owner">
+                        <i class="bi bi-person-circle mr-1"></i> Owner
+                    </button>
+                    <button class="sidebar-tab" data-tab="api">
+                        <i class="bi bi-cpu-fill mr-1"></i> API
+                    </button>
+                    <button class="sidebar-tab" data-tab="tos">
+                        <i class="bi bi-file-text-fill mr-1"></i> ToS
+                    </button>
+                    <button class="sidebar-tab" data-tab="privacy">
+                        <i class="bi bi-shield-lock-fill mr-1"></i> Privacy
+                    </button>
+                </div>
+
+                <div id="tab-content">
+                    <div id="tab-owner" class="sidebar-panel active space-y-4">
+                        <h3 class="text-xl font-bold text-white text-gradient">Informasi Owner</h3>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center floating">
+                                <i class="bi bi-person-fill text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-semibold">Xi he</p>
+                                <p class="text-gray-400 text-sm">Full Stack Developer</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-400">I'm just a programmer kid from Indonesia🇮🇩</p>
+                        <div class="flex space-x-3">
+                            <a href="mailto:yun-wangshu@proton.me" class="text-blue-400 hover:text-blue-300 transition-colors transform hover:scale-110">
+                                <i class="bi bi-envelope-fill text-xl"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div id="tab-api" class="sidebar-panel space-y-4">
+                        <h3 class="text-xl font-bold text-white text-gradient">Informasi API</h3>
+                        <p class="text-gray-400">Layanan ini menggunakan API eksternal untuk mengambil data video. Mohon dimaklumi jika terkadang terjadi <span class="text-yellow-400 font-bold">delay</span> (penundaan).</p>
+                        <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-4 rounded-lg border border-gray-700">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-gray-300">Status API:</span>
+                                <span class="text-green-400 font-bold flex items-center">
+                                    <i class="bi bi-circle-fill text-xs mr-1 animate-pulse"></i> Online
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-gray-300">Rata-rata delay:</span>
+                                <span class="text-gray-300">1-3 detik</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">Batas penggunaan:</span>
+                                <span class="text-gray-300">Wajar</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-800/30">
+                            <p class="text-blue-300 text-sm flex items-center">
+                                <i class="bi bi-info-circle-fill mr-2"></i>
+                                API ini menggunakan teknologi terbaru untuk memastikan kecepatan dan keandalan.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="tab-tos" class="sidebar-panel space-y-4">
+                        <h3 class="text-xl font-bold text-white text-gradient">Terms of Service</h3>
+                        <p class="text-gray-400 text-sm">Dengan menggunakan layanan ini, Anda setuju untuk tidak menggunakannya untuk aktivitas ilegal. Layanan ini disediakan "sebagaimana adanya" tanpa jaminan apa pun.</p>
+                        <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-4 rounded-lg border border-gray-700">
+                            <h4 class="text-white font-semibold mb-3 flex items-center">
+                                <i class="bi bi-list-check mr-2 text-blue-400"></i>
+                                Ketentuan Penggunaan:
+                            </h4>
+                            <ul class="text-gray-400 text-sm space-y-2">
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Hanya untuk konten publik</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Tidak untuk komersialisasi</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Hormati hak cipta</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Gunakan dengan bijak</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="tab-privacy" class="sidebar-panel space-y-4">
+                        <h3 class="text-xl font-bold text-white text-gradient">Privacy Policy</h3>
+                        <p class="text-gray-400 text-sm">Kami tidak menyimpan URL yang Anda masukkan atau video yang Anda unduh. Semua pemrosesan bersifat sementara dan anonim.</p>
+                        <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-4 rounded-lg border border-gray-700">
+                            <h4 class="text-white font-semibold mb-3 flex items-center">
+                                <i class="bi bi-shield-check mr-2 text-green-400"></i>
+                                Data yang Kami Kumpulkan:
+                            </h4>
+                            <ul class="text-gray-400 text-sm space-y-2">
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Tidak ada data pribadi</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Tidak ada cookies pelacakan</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Tidak ada penyimpanan permanen</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="bi bi-check-circle-fill text-green-400 mr-2 mt-1"></i>
+                                    <span>Semua proses bersifat real-time</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-4 p-3 bg-green-900/20 rounded-lg border border-green-800/30">
+                            <p class="text-green-300 text-sm flex items-center">
+                                <i class="bi bi-shield-lock mr-2"></i>
+                                Privasi Anda adalah prioritas kami. Kami tidak membagikan data apa pun dengan pihak ketiga.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('url-input');
+        const downloadButton = document.getElementById('download-button');
+        const loader = document.getElementById('loader');
+        const resultsContainer = document.getElementById('results-container');
+        const errorMessage = document.getElementById('error-message');
+
+        downloadButton.addEventListener('click', async () => {
+            const aio_url = urlInput.value.trim();
+            if (!aio_url) {
+                showError('Silakan masukkan URL Weibo yang valid.');
+                return;
+            }
+
+            // Tampilkan loader, sembunyikan hasil sebelumnya
+            loader.style.display = 'flex';
+            resultsContainer.innerHTML = '';
+            errorMessage.style.display = 'none';
+
+            try {
+                // Panggil API serverless Anda
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: aio_url }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Gagal mengambil data video.');
+                }
+
+                // Asumsi API mengembalikan objek dengan array 'medias'
+                if (data.medias && data.medias.length > 0) {
+                    displayResults(data.medias);
+                } else {
+                    showError('Tidak ditemukan media yang dapat diunduh dari URL ini.');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                // Sembunyikan loader
+                loader.style.display = 'none';
+            }
+        });
+
+        function displayResults(medias) {
+            resultsContainer.innerHTML = ''; // Bersihkan hasil lama
+            
+            // Urutkan media berdasarkan kualitas (jika ada), dari tertinggi ke terendah
+            const sortedMedia = medias.sort((a, b) => {
+                const qualityA = parseInt(a.quality) || 0;
+                const qualityB = parseInt(b.quality) || 0;
+                return qualityB - qualityA;
+            });
+            
+            let videoFound = false;
+            sortedMedia.forEach(media => {
+                // Hanya tampilkan link video
+                if (media.type === 'video') {
+                    const quality = media.quality || 'Video';
+                    const format = media.extension || 'mp4';
+                    
+                    const el = document.createElement('a');
+                    el.href = media.url;
+                    el.target = '_blank'; // Buka di tab baru
+                    el.download = true; // Sarankan untuk download
+                    el.className = 'bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg text-center font-bold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg block';
+                    el.innerHTML = `<i class="bi bi-film mr-2"></i> ${quality} (.${format})`;
+                    
+                    resultsContainer.appendChild(el);
+                    videoFound = true;
+                }
+            });
+            
+             if (!videoFound) { // Perbaikan: Cek jika videoFound masih false
+                 showError('Tidak ditemukan video yang dapat diunduh.');
+             }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultsContainer.innerHTML = '';
+        }
+
+        // Logika Tab Sidebar yang Diperbaiki
+        const tabs = document.querySelectorAll('.sidebar-tab');
+        const panels = document.querySelectorAll('.sidebar-panel');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabTarget = tab.getAttribute('data-tab'); // e.g., "api"
+
+                // 1. Deaktivasi semua tab
+                tabs.forEach(t => t.classList.remove('active'));
+                // 2. Aktivasi tab yang diklik
+                tab.classList.add('active');
+
+                // 3. Sembunyikan semua panel
+                panels.forEach(panel => {
+                    panel.classList.remove('active');
+                });
+
+                // 4. Tampilkan panel target
+                const targetPanel = document.getElementById(`tab-${tabTarget}`);
+                if (targetPanel) {
+                    setTimeout(() => {
+                        targetPanel.classList.add('active');
+                    }, 10);
+                }
+            });
+        });
+
+        // Scroll reveal effect
+        const scrollRevealElements = document.querySelectorAll('.scroll-reveal');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+        
+        scrollRevealElements.forEach(el => {
+            observer.observe(el);
+        });
+
+        // Fade in effect for list items
+        const fadeInElements = document.querySelectorAll('.fade-in');
+        fadeInElements.forEach((el, index) => {
+            el.style.animationDelay = `${index * 0.1}s`;
+        });
+    </script>
+</body>
+</html>
